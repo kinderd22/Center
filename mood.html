@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник настроения | Ресурсный центр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { graphite: '#1C1C1E', orange: { DEFAULT: '#FF8C42', light: '#FFA666' }, peach: '#FFF4F0', safe: '#F9FAFB' },
+                    fontFamily: { sans: ['PP Neue Montreal', 'system-ui', 'sans-serif'] },
+                    boxShadow: { 'soft': '0 4px 20px rgba(0, 0, 0, 0.03)', 'soft-hover': '0 12px 30px rgba(255, 140, 66, 0.08)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-book.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-italic.woff') format('woff');
+            font-weight: 400;
+            font-style: italic;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-bold.woff') format('woff');
+            font-weight: 700;
+            font-style: normal;
+        }
+        body { font-family: 'PP Neue Montreal', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; scroll-behavior: smooth; }
+        
+        /* Safe Mode */
+        body.safe-mode { background-color: #F9FAFB !important; }
+        body.safe-mode .canvas-container { opacity: 0.15; pointer-events: none; filter: grayscale(100%); }
+        body.safe-mode * { animation: none !important; transition: none !important; }
+        
+        /* Bento styles */
+        .bento-card { background: #ffffff; border: 1px solid #FFF4F0; border-radius: 24px; box-shadow: var(--tw-shadow-soft); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+        body:not(.safe-mode) .bento-card.interactive:hover { transform: translateY(-4px); box-shadow: var(--tw-shadow-soft-hover); border-color: #FF8C42; }
+        .pill-btn { border-radius: 9999px; transition: all 0.2s ease; }
+        *:focus-visible { outline: 3px solid #FF8C42; outline-offset: 2px; }
+        
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Custom Mood Selection Styles */
+        .mood-btn { transition: all 0.2s ease; border: 2px solid transparent; }
+        .mood-btn.active { border-color: #FF8C42; background-color: #FFF4F0; transform: scale(1.05); }
+        .mood-btn:hover:not(.active) { background-color: #f9fafb; transform: scale(1.02); }
+        
+        .tag-btn { transition: all 0.2s ease; border: 1px solid #e5e7eb; }
+        .tag-btn.active { background-color: #1C1C1E; color: white; border-color: #1C1C1E; }
+    
+        /* Mobile Adaptive Styles */
+        @media (max-width: 768px) {
+            .max-w-7xl { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+            h1.text-5xl, h1.text-7xl { font-size: 2.5rem !important; line-height: 1.1 !important; }
+            h2.text-4xl, h2.text-5xl { font-size: 2rem !important; line-height: 1.2 !important; }
+            
+            /* Responsive Canvas Container */
+            .canvas-container { height: 300px !important; min-height: 300px !important; border-radius: 1.5rem !important; margin-top: 1rem; width: 100% !important; }
+            
+            /* Bento Cards */
+            .bento-card { padding: 1.5rem !important; border-radius: 1.5rem !important; flex-direction: column !important; gap: 1.5rem !important; }
+            .bento-card.p-0 { padding: 0 !important; }
+            
+            /* Header */
+            header nav { display: none !important; } 
+            header .max-w-7xl { height: 4rem !important; }
+            header button { padding: 0.5rem 1rem !important; font-size: 0.875rem !important; }
+            
+            /* General Layout Overrides */
+            section { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+            .hero-section { min-height: auto !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+            .flex-row, .md\:flex-row, .lg\:flex-row { flex-direction: column !important; }
+            .w-full.md\:w-72 { width: 100% !important; }
+            
+            /* Inputs and Buttons */
+            .pill-btn { width: 100% !important; justify-content: center !important; text-align: center !important; }
+            .w-max { width: 100% !important; }
+            input, textarea, select { font-size: 16px !important; } /* Prevent iOS Zoom */
+            
+            /* Customizing Specific Sections */
+            /* Mood grid */
+            #mood-selector { grid-template-columns: repeat(3, 1fr) !important; gap: 0.5rem !important; }
+            #mood-selector button { padding: 0.75rem !important; }
+            
+            /* Specialists Catalog */
+            .spec-card { align-items: center !important; text-align: center !important; }
+            .spec-card > div.flex-grow { display: flex; flex-direction: column; align-items: center; width: 100%; }
+            .spec-card h4 { justify-content: center; width: 100%; }
+            .spec-card .flex-wrap { justify-content: center !important; }
+            .spec-card span.ml-auto { margin-left: 0 !important; width: 100%; text-align: center; margin-top: 0.5rem; }
+            
+            /* Library & Audio Cards */
+            .lib-card > div.flex { flex-direction: column !important; text-align: center !important; }
+            .lib-card .flex-wrap { justify-content: center !important; }
+            
+            /* Modal Fixes */
+            #modal-panel { width: 100% !important; height: 100% !important; border-radius: 0 !important; }
+            #modal-img { height: 200px !important; }
+            #booking-modal-content { padding: 1.5rem !important; border-radius: 1.5rem !important; transform: scale(1) !important; width: 95% !important; }
+            #close-modal { top: 1rem !important; right: 1rem !important; width: 2.5rem !important; height: 2.5rem !important; }
+            
+            /* Hide decorative massive objects to prevent overflow/weird scrolling */
+            .absolute.-right-8.-bottom-16, .absolute.-top-24, .bg-\[url { display: none !important; }
+            .absolute.right-0.top-0.bottom-0.w-full { display: none !important; } /* Big image overlay in support */
+        }
+
+    </style>
+</head>
+<body class="bg-white text-graphite antialiased min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-peach shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">Ресурсный<span class="text-orange">Центр</span></a>
+            <nav class="hidden md:flex gap-8 font-medium text-sm">
+                <a href="index.html" class="hover:text-orange transition-colors">Темы</a>
+                <a href="mood.html" class="text-orange font-bold transition-colors">Инструменты</a>
+                <a href="catalog.html" class="hover:text-orange transition-colors">Специалисты</a>
+                <a href="library.html" class="hover:text-orange transition-colors">Библиотека</a>
+                <a href="support.html" class="hover:text-orange transition-colors">Близким</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button id="safeModeToggle" class="pill-btn bg-peach text-orange font-semibold px-5 py-2.5 text-sm hover:bg-orange hover:text-white focus:ring-2 focus:ring-orange focus:outline-none" aria-pressed="false">Безопасный режим</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="flex-grow flex flex-col w-full py-12">
+        <div class="max-w-7xl mx-auto px-6 w-full">
+            
+            <!-- Page Title -->
+            <div class="mb-10">
+                <a href="index.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange font-medium mb-4 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    На главную
+                </a>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h1 class="text-4xl md:text-5xl font-black tracking-tight">Дневник настроения</h1>
+                    
+                </div>
+                <p class="text-lg text-gray-500 font-medium mt-4 max-w-2xl">Отмечайте свои эмоции, чтобы лучше понимать себя. 3D-сфера будет меняться, отражая ваше состояние и помогая визуализировать эмоции.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12">
+                
+                <!-- Form Column -->
+                <div class="flex flex-col gap-8">
+                    <!-- Mood Selection -->
+                    <div class="bento-card p-8">
+                        <h3 class="text-xl font-bold mb-6">Как вы себя чувствуете сейчас?</h3>
+                        <div class="grid grid-cols-5 gap-3" id="mood-selector">
+                            <button class="mood-btn flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white shadow-sm" data-mood="great" data-color="#FF8C42" data-speed="1">
+                                <span class="text-3xl">✨</span>
+                                <span class="text-xs font-bold text-gray-600">Отлично</span>
+                            </button>
+                            <button class="mood-btn flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white shadow-sm" data-mood="good" data-color="#34d399" data-speed="0.5">
+                                <span class="text-3xl">🌿</span>
+                                <span class="text-xs font-bold text-gray-600">Спокойно</span>
+                            </button>
+                            <button class="mood-btn active flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white shadow-sm" data-mood="neutral" data-color="#9ca3af" data-speed="0.8">
+                                <span class="text-3xl">☁️</span>
+                                <span class="text-xs font-bold text-gray-600">Нормально</span>
+                            </button>
+                            <button class="mood-btn flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white shadow-sm" data-mood="sad" data-color="#60a5fa" data-speed="0.3">
+                                <span class="text-3xl">🌧️</span>
+                                <span class="text-xs font-bold text-gray-600">Грустно</span>
+                            </button>
+                            <button class="mood-btn flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-white shadow-sm" data-mood="anxious" data-color="#fbbf24" data-speed="2.0">
+                                <span class="text-3xl">⚡</span>
+                                <span class="text-xs font-bold text-gray-600">Тревожно</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tags & Notes -->
+                    <div class="bento-card p-8">
+                        <h3 class="text-xl font-bold mb-4">Что повлияло на это?</h3>
+                        <p class="text-sm text-gray-500 mb-4">Выберите теги (можно несколько)</p>
+                        <div class="flex flex-wrap gap-2 mb-8" id="tag-selector">
+                            <button class="tag-btn px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100">Сон</button>
+                            <button class="tag-btn px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100">Семья</button>
+                            <button class="tag-btn px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100">Работа</button>
+                            <button class="tag-btn px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100">Новости</button>
+                            <button class="tag-btn px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100">Здоровье</button>
+                            <button class="tag-btn px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100">Отдых</button>
+                        </div>
+
+                        <h3 class="text-xl font-bold mb-4">Заметки</h3>
+                        <textarea id="mood-note" rows="4" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-base focus:ring-2 focus:ring-orange focus:border-orange outline-none resize-none transition-all placeholder-gray-400" placeholder="Запишите свои мысли. Это поможет выявить триггеры..."></textarea>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button id="save-mood-btn" class="pill-btn bg-orange text-white px-8 py-4 font-bold shadow-lg hover:shadow-orange/30 hover:bg-orange-light transition-all flex items-center gap-2">
+                                Сохранить запись
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualization & History Column -->
+                <div class="flex flex-col gap-8 h-full">
+                    
+                    <!-- 3D Visualization -->
+                    <div class="bento-card relative h-80 overflow-hidden bg-peach/20 border-peach flex items-center justify-center p-6 flex-shrink-0">
+                        <div class="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent z-10 pointer-events-none"></div>
+                        <div class="absolute top-6 left-6 z-20">
+                            <h3 class="font-bold text-lg text-graphite mb-1">Ваша эмоция</h3>
+                            <p class="text-xs text-gray-500">Сфера реагирует на выбор</p>
+                        </div>
+                        <div id="webgl-canvas" class="absolute inset-0 z-0"></div>
+                        <!-- Success Toast overlay -->
+                        <div id="success-toast" class="absolute inset-0 bg-white/90 backdrop-blur-sm z-30 flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+                            <div class="text-3xl mb-4">✨</div>
+                            <h3 class="text-xl font-bold">Сохранено</h3>
+                        </div>
+                    </div>
+
+                    <!-- History -->
+                    <div class="bento-card p-8 flex-grow flex flex-col h-full">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold">История</h3>
+                            <button id="clear-history-btn" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Очистить историю</button>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div id="empty-history" class="flex-grow flex flex-col items-center justify-center text-center py-10 opacity-0 hidden">
+                            <div class="text-5xl mb-4 opacity-50">🗂️</div>
+                            <p class="text-gray-500 font-medium">Здесь появятся ваши записи.</p>
+                        </div>
+
+                        <!-- List -->
+                        <div id="history-list" class="space-y-4 overflow-y-auto max-h-[400px] pr-2 flex-grow">
+                            <!-- JS will populate this -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Logic -->
+    <script>
+        // 1. Safe Mode Logic (Shared)
+        const safeModeBtn = document.getElementById('safeModeToggle');
+        let isSafeMode = localStorage.getItem('safeMode') === 'true';
+        
+        const toggleSafeModeUI = (enabled) => {
+            if (enabled) {
+                document.body.classList.add('safe-mode');
+                safeModeBtn.classList.replace('bg-peach', 'bg-graphite');
+                safeModeBtn.classList.replace('text-orange', 'text-white');
+                safeModeBtn.innerText = 'Обычный режим';
+            } else {
+                document.body.classList.remove('safe-mode');
+                safeModeBtn.classList.replace('bg-graphite', 'bg-peach');
+                safeModeBtn.classList.replace('text-white', 'text-orange');
+                safeModeBtn.innerText = 'Безопасный режим';
+            }
+        };
+        
+        toggleSafeModeUI(isSafeMode);
+        safeModeBtn.addEventListener('click', () => {
+            isSafeMode = !isSafeMode;
+            localStorage.setItem('safeMode', isSafeMode);
+            toggleSafeModeUI(isSafeMode);
+        });
+
+        // 2. UI Logic (Moods & Tags)
+        const moodBtns = document.querySelectorAll('.mood-btn');
+        const tagBtns = document.querySelectorAll('.tag-btn');
+        let currentMoodData = { icon: '☁️', title: 'Нормально', color: '#9ca3af', speed: 0.8 };
+        
+        // --- 3D Scene Communication Objects ---
+        const targetVisuals = { color: new THREE.Color('#9ca3af'), speed: 0.8 };
+
+        moodBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                moodBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                currentMoodData = {
+                    icon: btn.querySelector('span:first-child').innerText,
+                    title: btn.querySelector('span:last-child').innerText,
+                    color: btn.getAttribute('data-color'),
+                    speed: parseFloat(btn.getAttribute('data-speed'))
+                };
+
+                // Update 3D target
+                if(targetVisuals) {
+                    targetVisuals.color.set(currentMoodData.color);
+                    targetVisuals.speed = currentMoodData.speed;
+                }
+            });
+        });
+
+        tagBtns.forEach(btn => {
+            btn.addEventListener('click', () => btn.classList.toggle('active'));
+        });
+
+        const initThreeJS = () => {
+            const container = document.getElementById('webgl-canvas');
+            if (!container || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof THREE === 'undefined') return;
+
+            container.innerHTML = '';
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.z = 4.5;
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+            
+            const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight2.position.set(-5, -5, 5);
+            scene.add(dirLight2);
+
+            const geometry = new THREE.SphereGeometry(1.2, 64, 64);
+            const material = new THREE.MeshStandardMaterial({
+                color: '#9ca3af',
+                roughness: 0.3,
+                metalness: 0.2,
+                wireframe: false
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            const clock = new THREE.Clock();
+            let currentSpeed = 0.8;
+            
+            const animate = () => {
+                requestAnimationFrame(animate);
+                if (!document.body.classList.contains('safe-mode')) {
+                    const t = clock.getElapsedTime();
+                    
+                    if (typeof targetVisuals !== 'undefined') {
+                        currentSpeed += (targetVisuals.speed - currentSpeed) * 0.05;
+                        material.color.lerp(targetVisuals.color, 0.05);
+                        
+                        const isAnxious = currentSpeed > 1.5;
+                        material.wireframe = isAnxious;
+                        if(isAnxious) {
+                            material.roughness = 0.8;
+                            mesh.rotation.y += 0.05;
+                            mesh.rotation.x += 0.05;
+                            mesh.scale.setScalar(1 + Math.sin(t * 10) * 0.05);
+                        } else {
+                            material.roughness = 0.3;
+                            mesh.rotation.y += 0.01 * currentSpeed;
+                            mesh.rotation.x += 0.005 * currentSpeed;
+                            mesh.scale.setScalar(1 + Math.sin(t * 2) * 0.02);
+                        }
+                    } else {
+                        mesh.rotation.y += 0.01;
+                        mesh.rotation.x += 0.005;
+                    }
+                }
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            window.addEventListener('resize', () => {
+                if(container.clientWidth > 0){
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+        };
+        initThreeJS();
+
+        // 4. LocalStorage Logic
+        const historyList = document.getElementById('history-list');
+        const emptyHistory = document.getElementById('empty-history');
+        const noteInput = document.getElementById('mood-note');
+
+        const loadHistory = () => {
+            const history = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+            historyList.innerHTML = '';
+            
+            if (history.length === 0) {
+                emptyHistory.classList.remove('hidden');
+                setTimeout(() => emptyHistory.style.opacity = '1', 10);
+                return;
+            }
+            
+            emptyHistory.classList.add('hidden');
+            emptyHistory.style.opacity = '0';
+
+            // Show newest first
+            history.reverse().forEach(entry => {
+                const tagsHtml = entry.tags.map(t => `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded border border-gray-200">${t}</span>`).join('');
+                
+                const html = `
+                    <div class="p-5 rounded-2xl border border-gray-100 bg-gray-50/50 flex gap-4 items-start">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-white shadow-sm flex-shrink-0" style="border-bottom: 3px solid ${entry.color}">
+                            ${entry.icon}
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center mb-1">
+                                <h4 class="font-bold text-graphite">${entry.title}</h4>
+                                <span class="text-xs text-gray-400 font-medium">${entry.date}</span>
+                            </div>
+                            ${tagsHtml ? `<div class="flex flex-wrap gap-1 mb-2 mt-2">${tagsHtml}</div>` : ''}
+                            ${entry.note ? `<p class="text-sm text-gray-500 mt-2 bg-white p-3 rounded-lg border border-gray-100">${entry.note}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                historyList.insertAdjacentHTML('beforeend', html);
+            });
+        };
+
+        document.getElementById('save-mood-btn').addEventListener('click', () => {
+            const tags = Array.from(document.querySelectorAll('.tag-btn.active')).map(btn => btn.innerText);
+            const note = noteInput.value.trim();
+            const date = new Date().toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
+
+            const newEntry = {
+                icon: currentMoodData.icon,
+                title: currentMoodData.title,
+                color: currentMoodData.color,
+                tags: tags,
+                note: note,
+                date: date
+            };
+
+            const history = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+            history.push(newEntry);
+            localStorage.setItem('moodHistory', JSON.stringify(history));
+
+            // Success Animation
+            const toast = document.getElementById('success-toast');
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                // Reset form
+                noteInput.value = '';
+                tagBtns.forEach(btn => btn.classList.remove('active'));
+                loadHistory();
+            }, 1500);
+        });
+
+        document.getElementById('clear-history-btn').addEventListener('click', () => {
+            if(confirm('Вы уверены, что хотите удалить все записи? Восстановить их будет невозможно.')) {
+                localStorage.removeItem('moodHistory');
+                loadHistory();
+            }
+        });
+
+        // Init
+        loadHistory();
+
+    </script>
+    <!-- Footer -->
+    <footer class="border-t border-peach/50 pt-16 pb-8 bg-gray-50/50 mt-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12 text-sm text-gray-500 font-medium">
+            <div class="max-w-xs">
+                <div class="font-black text-xl text-graphite mb-4">Ресурсный<span class="text-orange">Центр</span></div>
+                <p class="mb-6 leading-relaxed">Безопасное пространство для работы с ментальным здоровьем. Полностью конфиденциально.</p>
+                <p>© 2026. Все права защищены.</p>
+            </div>
+            <div class="flex flex-wrap gap-16">
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">Инклюзивность</span>
+                    <a href="library.html" class="hover:text-orange transition-colors">Глоссарий терминов</a>
+                    <a href="#" class="hover:text-orange transition-colors">Настройки доступности</a>
+                    <a href="#" class="hover:text-orange transition-colors">TTS Спецификация</a>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">О проекте</span>
+                    <a href="index.html" class="hover:text-orange transition-colors">Наша миссия</a>
+                    <a href="support.html" class="hover:text-orange transition-colors">Поддержка близких</a>
+                    <a href="catalog.html" class="hover:text-orange transition-colors">Стать специалистом</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поддержка близких | Ресурсный центр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { graphite: '#1C1C1E', orange: { DEFAULT: '#FF8C42', light: '#FFA666' }, peach: '#FFF4F0', safe: '#F9FAFB' },
+                    fontFamily: { sans: ['PP Neue Montreal', 'system-ui', 'sans-serif'] },
+                    boxShadow: { 'soft': '0 4px 20px rgba(0, 0, 0, 0.03)', 'soft-hover': '0 12px 30px rgba(255, 140, 66, 0.08)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-book.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-italic.woff') format('woff');
+            font-weight: 400;
+            font-style: italic;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-bold.woff') format('woff');
+            font-weight: 700;
+            font-style: normal;
+        }
+        body { font-family: 'PP Neue Montreal', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; scroll-behavior: smooth; background-color: #fafafa; }
+        
+        /* Safe Mode */
+        body.safe-mode { background-color: #F9FAFB !important; }
+        body.safe-mode img { filter: grayscale(100%) contrast(0.8) opacity(0.8); }
+        body.safe-mode * { animation: none !important; transition: none !important; }
+        
+        /* Bento styles */
+        .bento-card { background: #ffffff; border: 1px solid #f3f4f6; border-radius: 24px; box-shadow: var(--tw-shadow-soft); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+        body:not(.safe-mode) .bento-card.interactive:hover { transform: translateY(-4px); box-shadow: var(--tw-shadow-soft-hover); border-color: #FF8C42; }
+        
+        .pill-btn { border-radius: 9999px; transition: all 0.2s ease; cursor: pointer; }
+        .pill-btn:active { transform: scale(0.96); }
+        *:focus-visible { outline: 3px solid #FF8C42; outline-offset: 2px; }
+        
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+        .cog-text p { margin-bottom: 1rem; line-height: 1.6; max-width: 65ch; }
+        
+        /* Custom Checklist */
+        .check-item { transition: all 0.2s; }
+        .check-input { appearance: none; width: 24px; height: 24px; border: 2px solid #d1d5db; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+        .check-input:checked { background-color: #FF8C42; border-color: #FF8C42; }
+        .check-input:checked::after { content: '✓'; color: white; font-weight: bold; font-size: 14px; }
+        .check-item.done span.text-content { text-decoration: line-through; color: #9ca3af; }
+    
+        /* Mobile Adaptive Styles */
+        @media (max-width: 768px) {
+            .max-w-7xl { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+            h1.text-5xl, h1.text-7xl { font-size: 2.5rem !important; line-height: 1.1 !important; }
+            h2.text-4xl, h2.text-5xl { font-size: 2rem !important; line-height: 1.2 !important; }
+            
+            /* Responsive Canvas Container */
+            .canvas-container { height: 300px !important; min-height: 300px !important; border-radius: 1.5rem !important; margin-top: 1rem; width: 100% !important; }
+            
+            /* Bento Cards */
+            .bento-card { padding: 1.5rem !important; border-radius: 1.5rem !important; flex-direction: column !important; gap: 1.5rem !important; }
+            .bento-card.p-0 { padding: 0 !important; }
+            
+            /* Header */
+            header nav { display: none !important; } 
+            header .max-w-7xl { height: 4rem !important; }
+            header button { padding: 0.5rem 1rem !important; font-size: 0.875rem !important; }
+            
+            /* General Layout Overrides */
+            section { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+            .hero-section { min-height: auto !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+            .flex-row, .md\:flex-row, .lg\:flex-row { flex-direction: column !important; }
+            .w-full.md\:w-72 { width: 100% !important; }
+            
+            /* Inputs and Buttons */
+            .pill-btn { width: 100% !important; justify-content: center !important; text-align: center !important; }
+            .w-max { width: 100% !important; }
+            input, textarea, select { font-size: 16px !important; } /* Prevent iOS Zoom */
+            
+            /* Customizing Specific Sections */
+            /* Mood grid */
+            #mood-selector { grid-template-columns: repeat(3, 1fr) !important; gap: 0.5rem !important; }
+            #mood-selector button { padding: 0.75rem !important; }
+            
+            /* Specialists Catalog */
+            .spec-card { align-items: center !important; text-align: center !important; }
+            .spec-card > div.flex-grow { display: flex; flex-direction: column; align-items: center; width: 100%; }
+            .spec-card h4 { justify-content: center; width: 100%; }
+            .spec-card .flex-wrap { justify-content: center !important; }
+            .spec-card span.ml-auto { margin-left: 0 !important; width: 100%; text-align: center; margin-top: 0.5rem; }
+            
+            /* Library & Audio Cards */
+            .lib-card > div.flex { flex-direction: column !important; text-align: center !important; }
+            .lib-card .flex-wrap { justify-content: center !important; }
+            
+            /* Modal Fixes */
+            #modal-panel { width: 100% !important; height: 100% !important; border-radius: 0 !important; }
+            #modal-img { height: 200px !important; }
+            #booking-modal-content { padding: 1.5rem !important; border-radius: 1.5rem !important; transform: scale(1) !important; width: 95% !important; }
+            #close-modal { top: 1rem !important; right: 1rem !important; width: 2.5rem !important; height: 2.5rem !important; }
+            
+            /* Hide decorative massive objects to prevent overflow/weird scrolling */
+            .absolute.-right-8.-bottom-16, .absolute.-top-24, .bg-\[url { display: none !important; }
+            .absolute.right-0.top-0.bottom-0.w-full { display: none !important; } /* Big image overlay in support */
+        }
+
+    </style>
+</head>
+<body class="text-graphite antialiased min-h-screen flex flex-col relative">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-peach shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">Ресурсный<span class="text-orange">Центр</span></a>
+            <nav class="hidden md:flex gap-8 font-medium text-sm">
+                <a href="index.html" class="hover:text-orange transition-colors">Темы</a>
+                <a href="mood.html" class="hover:text-orange transition-colors">Инструменты</a>
+                <a href="catalog.html" class="hover:text-orange transition-colors">Специалисты</a>
+                <a href="library.html" class="hover:text-orange transition-colors">Библиотека</a>
+                <a href="support.html" class="text-orange font-bold transition-colors">Близким</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button id="safeModeToggle" class="pill-btn bg-peach text-orange font-semibold px-5 py-2.5 text-sm hover:bg-orange hover:text-white focus:ring-2 focus:ring-orange focus:outline-none" aria-pressed="false">Безопасный режим</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="flex-grow flex flex-col w-full py-12">
+        <div class="max-w-7xl mx-auto px-6 w-full">
+            
+            <!-- Page Title -->
+            <div class="mb-12 bg-white p-10 rounded-3xl border border-peach shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-orange/10 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+                
+                <div class="relative z-10 flex-grow">
+                    <a href="index.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange font-medium mb-6 transition-colors group">
+                        <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> На главную
+                    </a>
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="inline-flex px-3 py-1 bg-peach text-orange text-xs font-bold rounded-full uppercase tracking-wider border border-orange/20">Для близких</span>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Как помочь и не разрушиться</h1>
+                    <p class="text-lg text-gray-500 font-medium max-w-2xl cog-text mb-6">Когда близкому человеку тяжело, мы хотим спасти его. Но часто наша помощь может навредить — и ему, и нам самим. Изучите правила экологичного общения.</p>
+                    
+                    <button id="ttsHero" class="pill-btn bg-graphite text-white px-6 py-4 hover:bg-orange font-bold flex items-center gap-3 w-max transition-all shadow-md hover:shadow-orange/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> Озвучить текст
+                    </button>
+                </div>
+
+                <!-- 3D Decor inside hero -->
+                <div class="w-full md:w-72 h-72 relative canvas-container flex-shrink-0 bg-peach/20 rounded-3xl overflow-hidden border border-peach/50 flex items-center justify-center shadow-inner">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-white/40 to-transparent z-10 pointer-events-none"></div>
+                    <div id="webgl-canvas" class="absolute inset-0"></div>
+                </div>
+            </div>
+
+            <!-- Bento Grid Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                
+                <!-- Left Column (Phrases) -->
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    
+                    <!-- Oxygen Mask Rule -->
+                    <div class="bento-card p-8 bg-graphite text-white relative overflow-hidden group">
+                        <div class="absolute right-0 bottom-0 opacity-10 text-9xl transform translate-x-1/4 translate-y-1/4 group-hover:scale-110 transition-transform duration-700"><svg class="w-full h-full text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg></div>
+                        <h3 class="text-2xl font-black mb-4 flex items-center gap-3 relative z-10">
+                            <span class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-xl border border-white/20">1</span>
+                            Правило кислородной маски
+                        </h3>
+                        <p class="text-gray-300 font-medium text-lg leading-relaxed max-w-2xl relative z-10">
+                            <strong class="text-white">«Сначала наденьте маску на себя, затем на ребенка».</strong> Вы не сможете помочь человеку в депрессии или тревоге, если сами истощены. Защищайте свои границы, спите, отдыхайте и не вините себя за то, что вы не терапевт. Вы не должны спасать, вы должны быть рядом.
+                        </p>
+                    </div>
+
+                    <!-- Phrase Comparison -->
+                    <div class="grid sm:grid-cols-2 gap-6">
+                        <!-- Red Flags -->
+                        <div class="bento-card p-6 border-red-100 bg-red-50/30">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 bg-red-100 text-red-500 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-red-200"><svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg></div>
+                                <div>
+                                    <h4 class="font-bold text-graphite text-lg">Слова-триггеры</h4>
+                                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Обесценивают боль</p>
+                                </div>
+                            </div>
+                            <ul class="space-y-3">
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-red-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-red-500 font-black mt-0.5 text-lg">✕</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Улыбнись, всё не так уж и плохо»</span>
+                                </li>
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-red-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-red-500 font-black mt-0.5 text-lg">✕</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«А вот детям в Африке хуже»</span>
+                                </li>
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-red-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-red-500 font-black mt-0.5 text-lg">✕</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Просто возьми себя в руки!»</span>
+                                </li>
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-red-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-red-500 font-black mt-0.5 text-lg">✕</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Ты сам(а) себе это придумываешь»</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Green Flags -->
+                        <div class="bento-card p-6 border-green-100 bg-green-50/30">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-green-200"><svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg></div>
+                                <div>
+                                    <h4 class="font-bold text-graphite text-lg">Слова поддержки</h4>
+                                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Дают опору</p>
+                                </div>
+                            </div>
+                            <ul class="space-y-3">
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-green-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-green-500 font-black mt-0.5 text-lg">✓</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Я вижу, что тебе тяжело. Я рядом с тобой.»</span>
+                                </li>
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-green-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-green-500 font-black mt-0.5 text-lg">✓</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Мне просто послушать или поискать решение?»</span>
+                                </li>
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-green-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-green-500 font-black mt-0.5 text-lg">✓</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Твои чувства абсолютно нормальны»</span>
+                                </li>
+                                <li class="flex items-start gap-3 p-4 bg-white rounded-xl shadow-sm border border-green-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                                    <span class="text-green-500 font-black mt-0.5 text-lg">✓</span>
+                                    <span class="text-sm font-medium text-gray-700 leading-tight">«Чем я могу помочь прямо сейчас?»</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- How to suggest therapy -->
+                    <div class="bento-card p-8 flex flex-col sm:flex-row gap-8 items-center bg-white border border-gray-100">
+                        <div class="relative w-32 h-32 rounded-full overflow-hidden shadow-inner flex-shrink-0 border-4 border-peach">
+                            <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=300" alt="Психолог" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black mb-3 text-graphite">Как предложить пойти к психологу?</h3>
+                            <p class="text-gray-500 font-medium text-sm leading-relaxed mb-5">Говорите только через «Я-сообщение». Не ставьте диагнозы. Покажите, что вы беспокоитесь о человеке, а не пытаетесь его "починить".</p>
+                            <div class="bg-peach/50 p-5 rounded-2xl text-sm font-medium text-gray-800 border border-peach relative">
+                                <div class="absolute -left-2 -top-2 text-2xl"><svg class="w-6 h-6 text-graphite" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div>
+                                <b>Скажите так:</b> <br>«Я очень ценю наши отношения и переживаю за тебя. Мне кажется, тебе сейчас непросто. Может быть, стоит обсудить это со специалистом? Я могу помочь найти контакты или проводить тебя, если хочешь».
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column (Checklist) -->
+                <aside class="lg:col-span-1 w-full flex-shrink-0 sticky top-28">
+                    <div class="bento-card p-6 bg-white border-2 border-transparent hover:border-orange transition-colors duration-300">
+                        <div class="text-center mb-6">
+                            <div class="inline-flex p-4 bg-orange/10 rounded-2xl text-orange mb-4 shadow-sm border border-orange/20">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            </div>
+                            <h3 class="text-xl font-black text-graphite mb-2">В ресурсе ли вы?</h3>
+                            <p class="text-xs text-gray-500 font-medium leading-relaxed">Ежедневный чек-лист заботы о себе. Отметьте то, что сделали сегодня для себя.</p>
+                        </div>
+
+                        <div class="space-y-3" id="care-checklist">
+                            <label class="check-item flex items-center gap-4 p-3.5 hover:bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                                <input type="checkbox" class="check-input" data-id="1">
+                                <span class="text-sm font-medium text-content select-none">Спал(а) 7-8 часов</span>
+                            </label>
+                            <label class="check-item flex items-center gap-4 p-3.5 hover:bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                                <input type="checkbox" class="check-input" data-id="2">
+                                <span class="text-sm font-medium text-content select-none">Нормально поел(а)</span>
+                            </label>
+                            <label class="check-item flex items-center gap-4 p-3.5 hover:bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                                <input type="checkbox" class="check-input" data-id="3">
+                                <span class="text-sm font-medium text-content select-none">Был(а) на свежем воздухе</span>
+                            </label>
+                            <label class="check-item flex items-center gap-4 p-3.5 hover:bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                                <input type="checkbox" class="check-input" data-id="4">
+                                <span class="text-sm font-medium text-content select-none">Не брал(а) чужую вину</span>
+                            </label>
+                            <label class="check-item flex items-center gap-4 p-3.5 hover:bg-gray-50 rounded-xl cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                                <input type="checkbox" class="check-input" data-id="5">
+                                <span class="text-sm font-medium text-content select-none">Делал(а) то, что радует</span>
+                            </label>
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-100">
+                            <div class="flex justify-between items-center text-xs font-bold text-gray-500 mb-3">
+                                <span class="uppercase tracking-wider">Мой ресурс:</span>
+                                <span id="progress-text" class="bg-gray-100 px-2 py-1 rounded-md">0/5</span>
+                            </div>
+                            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner border border-gray-200/50">
+                                <div id="progress-bar" class="h-full bg-gradient-to-r from-orange-light to-orange transition-all duration-500 w-0"></div>
+                            </div>
+                            <button id="reset-checklist" class="mt-5 w-full text-xs font-bold text-gray-400 hover:text-red-500 hover:bg-red-50 py-2 rounded-lg transition-colors">Сбросить чеклист</button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-peach/50 pt-16 pb-8 bg-gray-50/50 mt-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12 text-sm text-gray-500 font-medium">
+            <div class="max-w-xs">
+                <div class="font-black text-xl text-graphite mb-4">Ресурсный<span class="text-orange">Центр</span></div>
+                <p class="mb-6 leading-relaxed">Безопасное пространство для работы с ментальным здоровьем. Полностью конфиденциально.</p>
+                <p>© 2026. Все права защищены.</p>
+            </div>
+            <div class="flex flex-wrap gap-16">
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">Инклюзивность</span>
+                    <a href="library.html" class="hover:text-orange transition-colors">Глоссарий терминов</a>
+                    <a href="#" class="hover:text-orange transition-colors">Настройки доступности</a>
+                    <a href="#" class="hover:text-orange transition-colors">TTS Спецификация</a>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">О проекте</span>
+                    <a href="index.html" class="hover:text-orange transition-colors">Наша миссия</a>
+                    <a href="support.html" class="hover:text-orange transition-colors">Поддержка близких</a>
+                    <a href="catalog.html" class="hover:text-orange transition-colors">Стать специалистом</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic -->
+    <script>
+        // Safe Mode
+        const safeModeBtn = document.getElementById('safeModeToggle');
+        let isSafeMode = localStorage.getItem('safeMode') === 'true';
+        
+        const toggleSafeModeUI = (enabled) => {
+            if (enabled) {
+                document.body.classList.add('safe-mode');
+                safeModeBtn.classList.replace('bg-peach', 'bg-graphite');
+                safeModeBtn.classList.replace('text-orange', 'text-white');
+                safeModeBtn.innerText = 'Обычный режим';
+            } else {
+                document.body.classList.remove('safe-mode');
+                safeModeBtn.classList.replace('bg-graphite', 'bg-peach');
+                safeModeBtn.classList.replace('text-white', 'text-orange');
+                safeModeBtn.innerText = 'Безопасный режим';
+            }
+        };
+        
+        toggleSafeModeUI(isSafeMode);
+        safeModeBtn.addEventListener('click', () => {
+            isSafeMode = !isSafeMode;
+            localStorage.setItem('safeMode', isSafeMode);
+            toggleSafeModeUI(isSafeMode);
+        });
+
+        // TTS (Озвучка)
+        const ttsBtn = document.getElementById('ttsHero');
+        let isSpeaking = false;
+        ttsBtn.addEventListener('click', () => {
+            if (!('speechSynthesis' in window)) return;
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+                ttsBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> Озвучить текст';
+                return;
+            }
+            const msg = new SpeechSynthesisUtterance("Раздел для близких. Как помочь и не разрушиться. Когда близкому человеку тяжело, мы хотим спасти его. Но часто наша помощь может навредить — и ему, и нам самим. Изучите правила экологичного общения и сохраните свои ресурсы.");
+            msg.lang = 'ru-RU'; msg.rate = 0.9;
+            msg.onend = () => { 
+                isSpeaking = false; 
+                ttsBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> Озвучить текст'; 
+            };
+            window.speechSynthesis.speak(msg);
+            isSpeaking = true;
+            ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg> Остановить';
+        });
+
+        // Checklist Logic (Local Storage)
+        const checkboxes = document.querySelectorAll('.check-input');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const resetBtn = document.getElementById('reset-checklist');
+        
+        const updateChecklist = () => {
+            let checkedCount = 0;
+            checkboxes.forEach(cb => {
+                const parent = cb.closest('.check-item');
+                if (cb.checked) {
+                    parent.classList.add('done');
+                    checkedCount++;
+                } else {
+                    parent.classList.remove('done');
+                }
+            });
+            
+            const total = checkboxes.length;
+            const percentage = (checkedCount / total) * 100;
+            progressBar.style.width = percentage + '%';
+            progressText.innerText = checkedCount + '/' + total;
+            
+            if (percentage === 100) {
+                progressBar.classList.add('bg-green-500');
+                progressBar.classList.remove('bg-gradient-to-r', 'from-orange-light', 'to-orange');
+            } else {
+                progressBar.classList.remove('bg-green-500');
+                progressBar.classList.add('bg-gradient-to-r', 'from-orange-light', 'to-orange');
+            }
+            
+            // Save state
+            const state = Array.from(checkboxes).map(cb => cb.checked);
+            localStorage.setItem('careChecklist', JSON.stringify(state));
+        };
+
+        // Load saved state
+        const savedState = JSON.parse(localStorage.getItem('careChecklist'));
+        if (savedState && savedState.length === checkboxes.length) {
+            checkboxes.forEach((cb, index) => {
+                cb.checked = savedState[index];
+            });
+        }
+        updateChecklist();
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateChecklist);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = false);
+            updateChecklist();
+        });
+
+        const initThreeJS = () => {
+            const container = document.getElementById('webgl-canvas');
+            if (!container || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof THREE === 'undefined') return;
+
+            container.innerHTML = '';
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.z = 4.5;
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            const light = new THREE.DirectionalLight(0xff8c42, 1.5);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+
+            const statusEl = document.createElement('div');
+            statusEl.className = 'absolute inset-0 flex flex-col items-center justify-center text-xs font-bold text-orange text-center p-4 bg-white/50 backdrop-blur-sm z-10';
+            statusEl.innerHTML = '<div class="w-5 h-5 border-2 border-orange border-t-transparent rounded-full animate-spin mb-2"></div>Загрузка 3D...';
+            container.appendChild(statusEl);
+
+            let mesh;
+            const loader = new THREE.GLTFLoader();
+            
+            loader.load('Untitled.glb', function(gltf) {
+                if(statusEl) statusEl.remove();
+                const model = gltf.scene;
+                
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.5 / maxDim; 
+                model.scale.set(scale, scale, scale);
+                
+                const center = box.getCenter(new THREE.Vector3()).multiplyScalar(scale);
+                model.position.sub(center);
+                
+                mesh = new THREE.Group();
+                mesh.add(model);
+                scene.add(mesh);
+            }, undefined, function(error) {
+                console.error("Ошибка загрузки 3D: ", error);
+                if(statusEl) {
+                    statusEl.innerHTML = '<span class="text-red-500">❌ Ошибка 3D.<br>Убедитесь, что файл <b>Untitled.glb</b> находится в той же папке.</span>';
+                    statusEl.classList.remove('text-orange', 'bg-white/50');
+                    statusEl.classList.add('bg-red-50');
+                }
+            });
+
+            const clock = new THREE.Clock();
+            let currentSpeed = 0.8;
+            const animate = () => {
+                requestAnimationFrame(animate);
+                if (!document.body.classList.contains('safe-mode') && mesh) {
+                    const t = clock.getElapsedTime();
+                    mesh.rotation.y = t * 0.2;
+                    mesh.rotation.x = Math.sin(t * 0.3) * 0.2;
+                    
+                    if (typeof targetVisuals !== 'undefined') {
+                        currentSpeed += (targetVisuals.speed - currentSpeed) * 0.05;
+                        mesh.traverse((child) => {
+                            if (child.isMesh && child.material && child.material.color) {
+                                child.material.color.lerp(targetVisuals.color, 0.05);
+                            }
+                        });
+                    }
+
+                    const scale = 1 + Math.sin(t * (typeof currentSpeed !== 'undefined' ? currentSpeed : 1.5)) * 0.03;
+                    mesh.scale.set(scale, scale, scale);
+                }
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            window.addEventListener('resize', () => {
+                if(container.clientWidth > 0){
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+        };
+        initThreeJS();
+    </script>
+</body>
+</html>

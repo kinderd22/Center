@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Психологическое благополучие | Ресурсный центр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { graphite: '#1C1C1E', orange: { DEFAULT: '#FF8C42', light: '#FFA666' }, peach: '#FFF4F0', safe: '#F9FAFB' },
+                    fontFamily: { sans: ['PP Neue Montreal', 'system-ui', 'sans-serif'] },
+                    boxShadow: { 'soft': '0 4px 20px rgba(0, 0, 0, 0.03)', 'soft-hover': '0 12px 30px rgba(255, 140, 66, 0.08)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-book.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-italic.woff') format('woff');
+            font-weight: 400;
+            font-style: italic;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-bold.woff') format('woff');
+            font-weight: 700;
+            font-style: normal;
+        }
+        body { font-family: 'PP Neue Montreal', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; scroll-behavior: smooth; }
+        body.safe-mode { background-color: #F9FAFB !important; }
+        body.safe-mode .canvas-container { opacity: 0.15; pointer-events: none; filter: grayscale(100%); }
+        body.safe-mode * { animation: none !important; transition: none !important; }
+        body.safe-mode .trigger-content { filter: blur(12px) grayscale(100%); pointer-events: none; }
+        body.safe-mode .trigger-warning { display: flex; }
+        body.safe-mode .theme-card { background-image: none !important; background-color: #ffffff !important; border: 1px solid #e5e7eb; }
+        body.safe-mode .theme-card .text-white { color: #1C1C1E !important; }
+        body.safe-mode .theme-card .text-gray-200, body.safe-mode .theme-card .text-gray-300 { color: #6b7280 !important; }
+        body.safe-mode .theme-card .bg-white\/10 { background-color: #FFF4F0 !important; color: #FF8C42 !important; border: none; }
+        .trigger-warning { display: none; }
+        .bento-card { background: #ffffff; border: 1px solid #FFF4F0; border-radius: 24px; box-shadow: var(--tw-shadow-soft); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+        body:not(.safe-mode) .bento-card.interactive:hover { transform: translateY(-4px); box-shadow: var(--tw-shadow-soft-hover); border-color: #FF8C42; }
+        .pill-btn { border-radius: 9999px; transition: all 0.2s ease; }
+        *:focus-visible { outline: 3px solid #FF8C42; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+        .cog-text p { margin-bottom: 1rem; line-height: 1.6; max-width: 65ch; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .grounding-cb input:checked + div { background-color: #FF8C42; border-color: #FF8C42; }
+        .grounding-cb input:checked + div svg { opacity: 1; transform: scale(1); }
+        .grounding-cb input:focus-visible + div { outline: 3px solid #FF8C42; outline-offset: 2px; }
+        .grounding-cb div svg { transform: scale(0.5); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    
+        /* Mobile Adaptive Styles */
+        @media (max-width: 768px) {
+            .max-w-7xl { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+            h1.text-5xl, h1.text-7xl { font-size: 2.5rem !important; line-height: 1.1 !important; }
+            h2.text-4xl, h2.text-5xl { font-size: 2rem !important; line-height: 1.2 !important; }
+            
+            /* Responsive Canvas Container */
+            .canvas-container { height: 300px !important; min-height: 300px !important; border-radius: 1.5rem !important; margin-top: 1rem; width: 100% !important; }
+            
+            /* Bento Cards */
+            .bento-card { padding: 1.5rem !important; border-radius: 1.5rem !important; flex-direction: column !important; gap: 1.5rem !important; }
+            .bento-card.p-0 { padding: 0 !important; }
+            
+            /* Header */
+            header nav { display: none !important; } 
+            header .max-w-7xl { height: 4rem !important; }
+            header button { padding: 0.5rem 1rem !important; font-size: 0.875rem !important; }
+            
+            /* General Layout Overrides */
+            section { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+            .hero-section { min-height: auto !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+            .flex-row, .md\:flex-row, .lg\:flex-row { flex-direction: column !important; }
+            .w-full.md\:w-72 { width: 100% !important; }
+            
+            /* Inputs and Buttons */
+            .pill-btn { width: 100% !important; justify-content: center !important; text-align: center !important; }
+            .w-max { width: 100% !important; }
+            input, textarea, select { font-size: 16px !important; } /* Prevent iOS Zoom */
+            
+            /* Customizing Specific Sections */
+            /* Mood grid */
+            #mood-selector { grid-template-columns: repeat(3, 1fr) !important; gap: 0.5rem !important; }
+            #mood-selector button { padding: 0.75rem !important; }
+            
+            /* Specialists Catalog */
+            .spec-card { align-items: center !important; text-align: center !important; }
+            .spec-card > div.flex-grow { display: flex; flex-direction: column; align-items: center; width: 100%; }
+            .spec-card h4 { justify-content: center; width: 100%; }
+            .spec-card .flex-wrap { justify-content: center !important; }
+            .spec-card span.ml-auto { margin-left: 0 !important; width: 100%; text-align: center; margin-top: 0.5rem; }
+            
+            /* Library & Audio Cards */
+            .lib-card > div.flex { flex-direction: column !important; text-align: center !important; }
+            .lib-card .flex-wrap { justify-content: center !important; }
+            
+            /* Modal Fixes */
+            #modal-panel { width: 100% !important; height: 100% !important; border-radius: 0 !important; }
+            #modal-img { height: 200px !important; }
+            #booking-modal-content { padding: 1.5rem !important; border-radius: 1.5rem !important; transform: scale(1) !important; width: 95% !important; }
+            #close-modal { top: 1rem !important; right: 1rem !important; width: 2.5rem !important; height: 2.5rem !important; }
+            
+            /* Hide decorative massive objects to prevent overflow/weird scrolling */
+            .absolute.-right-8.-bottom-16, .absolute.-top-24, .bg-\[url { display: none !important; }
+            .absolute.right-0.top-0.bottom-0.w-full { display: none !important; } /* Big image overlay in support */
+        }
+
+    </style>
+</head>
+<body class="bg-white text-graphite antialiased min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-peach shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">Ресурсный<span class="text-orange">Центр</span></a>
+            <nav class="hidden md:flex gap-8 font-medium text-sm">
+                <a href="index.html" class="text-orange font-bold transition-colors">Темы</a>
+                <a href="mood.html" class="hover:text-orange transition-colors">Инструменты</a>
+                <a href="catalog.html" class="hover:text-orange transition-colors">Специалисты</a>
+                <a href="library.html" class="hover:text-orange transition-colors">Библиотека</a>
+                <a href="support.html" class="hover:text-orange transition-colors">Близким</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button id="safeModeToggle" class="pill-btn bg-peach text-orange font-semibold px-5 py-2.5 text-sm hover:bg-orange hover:text-white focus:ring-2 focus:ring-orange focus:outline-none" aria-pressed="false">Безопасный режим</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="flex-grow flex flex-col w-full">
+        <!-- Hero -->
+        <section class="max-w-7xl mx-auto px-6 py-12 flex flex-col lg:flex-row gap-12 items-center min-h-[80vh]">
+            <div class="flex-1 z-10 cog-text">
+                <h1 class="text-5xl lg:text-7xl font-black leading-[1.1] mb-6 tracking-tight">Пространство для вашего <span class="bg-peach px-2 rounded-xl text-orange inline-block mt-2">спокойствия</span></h1>
+                <p class="text-xl text-gray-500 mb-8 max-w-lg font-medium">Мы здесь, чтобы помочь вам найти баланс. Без стигмы, сложных терминов и лишнего шума.</p>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <a href="#emergency" class="pill-btn bg-graphite text-white font-semibold px-8 py-4 hover:bg-gray-800 text-lg shadow-lg transition-all">Мне нужна помощь сейчас</a>
+                    <button id="ttsHero" class="pill-btn bg-gray-50 border border-gray-200 text-graphite px-6 py-4 hover:bg-gray-100 font-medium flex items-center gap-2"><svg class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> Озвучить</button>
+                </div>
+            </div>
+            <div class="flex-1 w-full h-[500px] relative canvas-container rounded-3xl overflow-hidden bg-peach/30 border border-peach flex items-center justify-center">
+                <div id="webgl-canvas" class="absolute inset-0"></div>
+            </div>
+        </section>
+
+        <!-- Emergency -->
+        <section id="emergency" class="bg-orange py-16 relative overflow-hidden">
+            <div class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center mix-blend-multiply"></div>
+            <div class="max-w-7xl mx-auto px-6 relative z-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                    <div class="text-white max-w-xl">
+                        <h2 class="text-4xl font-black mb-4">Экстренные контакты</h2>
+                        <p class="text-lg opacity-90 leading-relaxed">Если вы чувствуете, что не справляетесь, или находитесь в опасности — пожалуйста, обратитесь за немедленной помощью.</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 w-full md:w-auto">
+                        <h3 class="text-white text-xl font-bold mb-1">Горячая линия</h3>
+                        <p class="text-white/80 text-sm mb-6">Бесплатно, анонимно, круглосуточно.</p>
+                        <a href="tel:88001234567" class="group relative inline-flex items-center justify-center bg-white overflow-hidden rounded-2xl h-16 w-full md:w-72 shadow-lg transition-all">
+                            <span class="absolute inset-0 flex items-center justify-center font-bold text-orange text-lg transition-transform duration-300 group-hover:-translate-y-full">Показать номер</span>
+                            <span class="absolute inset-0 flex items-center justify-center font-black text-graphite text-2xl translate-y-full transition-transform duration-300 group-hover:translate-y-0">8 (800) 123-45-67</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Themes -->
+        <section id="themes" class="py-24 max-w-7xl mx-auto px-6 w-full">
+            <h2 class="text-4xl font-black mb-12 tracking-tight">С чем вы столкнулись?</h2>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <a href="catalog.html?spec=1" class="bento-card interactive theme-card p-8 h-72 relative overflow-hidden flex flex-col justify-end group cursor-pointer" style="background-image: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.1)), url('https://images.unsplash.com/photo-1505159940484-eb2b9f2588e2?auto=format&fit=crop&q=80&w=600'); background-size: cover; background-position: center;">
+                    <div class="relative z-10 text-white transition-transform duration-300 group-hover:translate-y-[-4px]">
+                        <div class="text-4xl mb-3 bg-white/10 backdrop-blur-md w-14 h-14 rounded-2xl flex items-center justify-center border border-white/20"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2m-18 4c3 0 3-2 6-2s3 2 6 2 3-2 6-2"></path></svg></div>
+                        <h3 class="text-2xl font-bold mb-2">Тревога</h3>
+                        <p class="text-sm text-gray-300 font-medium line-clamp-2">Панические атаки, навязчивые мысли, беспокойство.</p>
+                    </div>
+                </a>
+                <a href="catalog.html?spec=2" class="bento-card interactive theme-card p-8 h-72 relative overflow-hidden flex flex-col justify-end group cursor-pointer" style="background-image: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.1)), url('https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?auto=format&fit=crop&q=80&w=600'); background-size: cover; background-position: center;">
+                    <div class="relative z-10 text-white transition-transform duration-300 group-hover:translate-y-[-4px]">
+                        <div class="text-4xl mb-3 bg-white/10 backdrop-blur-md w-14 h-14 rounded-2xl flex items-center justify-center border border-white/20"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg></div>
+                        <h3 class="text-2xl font-bold mb-2">Выгорание</h3>
+                        <p class="text-sm text-gray-300 font-medium line-clamp-2">Отсутствие сил, апатия, потеря интереса к работе.</p>
+                    </div>
+                </a>
+                <a href="catalog.html?spec=3" class="bento-card interactive theme-card p-8 h-72 relative overflow-hidden flex flex-col justify-end group cursor-pointer" style="background-image: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.1)), url('https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=600'); background-size: cover; background-position: center;">
+                    <div class="relative z-10 text-white transition-transform duration-300 group-hover:translate-y-[-4px]">
+                        <div class="text-4xl mb-3 bg-white/10 backdrop-blur-md w-14 h-14 rounded-2xl flex items-center justify-center border border-white/20"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
+                        <h3 class="text-2xl font-bold mb-2">Отношения</h3>
+                        <p class="text-sm text-gray-300 font-medium line-clamp-2">Конфликты, личные границы, сложности в общении.</p>
+                    </div>
+                </a>
+                <a href="catalog.html?spec=5" class="bento-card interactive theme-card p-8 h-72 relative overflow-hidden flex flex-col justify-end group cursor-pointer block" style="background-image: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.1)), url('https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=600'); background-size: cover; background-position: center;">
+                    <div class="trigger-warning absolute inset-0 bg-gray-50/95 backdrop-blur-xl flex-col items-center justify-center p-6 text-center z-20 transition-all">
+                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3"><svg class="w-6 h-6 text-graphite" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></div>
+                        <p class="text-sm font-bold text-gray-500">Контент скрыт безопасным режимом</p>
+                    </div>
+                    <div class="trigger-content relative z-10 text-white transition-transform duration-300 group-hover:translate-y-[-4px]">
+                        <span class="inline-block mb-3 text-xs font-bold bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">⚠️ Возможен триггер</span>
+                        <h3 class="text-2xl font-bold mb-2">Кризис и травма</h3>
+                        <p class="text-sm text-gray-300 font-medium line-clamp-2">Утрата, насилие, ПТСР. Тяжелые жизненные ситуации.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Tools -->
+        <section id="tools" class="py-24 bg-peach/20 border-y border-peach/50 relative">
+            <div class="max-w-7xl mx-auto px-6 w-full">
+                <div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h2 class="text-4xl font-black mb-2 tracking-tight">Инструменты самопомощи</h2>
+                        <p class="text-gray-500 font-medium text-lg">Разработано с учетом когнитивной доступности.</p>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-6">
+                    <a href="mood.html" class="bento-card interactive p-10 md:col-span-2 bg-white flex flex-col justify-between group relative overflow-hidden">
+                        <div class="absolute -right-8 -bottom-16 text-[220px] opacity-[0.03] group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-700 pointer-events-none select-none z-0"><svg class="w-1/2 h-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-16 h-16 bg-peach rounded-3xl flex items-center justify-center shadow-inner group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300"><svg class="w-8 h-8 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></div>
+                                
+                            </div>
+                            <h3 class="text-4xl font-black mb-4 group-hover:text-orange transition-colors tracking-tight">Дневник настроения</h3>
+                            <p class="text-gray-500 font-medium mb-10 max-w-md leading-relaxed text-lg">Отмечайте свои эмоции каждый день. Мы позаботились о безопасности: формы с крупными полями сохраняют черновики автоматически, а данные остаются только на вашем устройстве.</p>
+                        </div>
+                        <span class="pill-btn relative z-10 bg-graphite text-white px-8 py-4 font-semibold w-max group-hover:bg-orange shadow-lg group-hover:shadow-orange/20 transition-all flex items-center gap-3">
+                            Открыть дневник
+                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </span>
+                    </a>
+                    
+                    <div class="bento-card p-8 bg-graphite text-white flex flex-col relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-br from-graphite to-gray-900 pointer-events-none z-0"></div>
+                        <div class="relative z-10 flex-grow flex flex-col">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-2xl font-black tracking-tight">Чек-лист: Заземление</h3>
+                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl backdrop-blur-md"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></div>
+                            </div>
+                            <p class="text-gray-400 text-sm font-medium mb-6 leading-relaxed">Визуальная опора при тревоге. Найдите и отметьте:</p>
+                            
+                            <div class="space-y-3 flex-grow">
+                                <label class="grounding-cb flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer group/item">
+                                    <input type="checkbox" class="sr-only" checked>
+                                    <div class="w-8 h-8 rounded-xl border-2 border-gray-500 flex items-center justify-center transition-colors group-hover/item:border-orange flex-shrink-0">
+                                        <svg class="w-5 h-5 text-white opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-white text-[15px] transition-colors flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> 5 вещей</span>
+                                        <span class="text-xs text-gray-400">которые вы видите</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="grounding-cb flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer group/item">
+                                    <input type="checkbox" class="sr-only">
+                                    <div class="w-8 h-8 rounded-xl border-2 border-gray-500 flex items-center justify-center transition-colors group-hover/item:border-orange flex-shrink-0">
+                                        <svg class="w-5 h-5 text-white opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-white text-[15px] transition-colors flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path></svg> 4 предмета</span>
+                                        <span class="text-xs text-gray-400">которые можно потрогать</span>
+                                    </div>
+                                </label>
+                                
+                                <label class="grounding-cb flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer group/item">
+                                    <input type="checkbox" class="sr-only">
+                                    <div class="w-8 h-8 rounded-xl border-2 border-gray-500 flex items-center justify-center transition-colors group-hover/item:border-orange flex-shrink-0">
+                                        <svg class="w-5 h-5 text-white opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-white text-[15px] transition-colors flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> 3 звука</span>
+                                        <span class="text-xs text-gray-400">которые вы слышите</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Catalog & Library -->
+        <section class="py-24 max-w-7xl mx-auto px-6 w-full">
+            <div class="grid lg:grid-cols-2 gap-x-16 gap-y-12 items-start">
+                
+                <!-- Catalog Expanded -->
+                <div id="catalog" class="flex flex-col">
+                    <div class="mb-8">
+                        <h2 class="text-4xl font-black mb-4 tracking-tight">Найти специалиста</h2>
+                        <p class="text-gray-500 font-medium">Каталог проверенных психологов.</p>
+                    </div>
+                    
+                    <!-- Expanded Filters -->
+                    <div class="flex gap-3 mb-8 overflow-x-auto pb-4 no-scrollbar">
+                        <button class="filter-btn active px-5 py-2 bg-graphite text-white font-semibold rounded-full text-sm flex-shrink-0" data-filter="all">Все</button>
+                        <button class="filter-btn px-5 py-2 bg-gray-50 text-gray-600 font-medium rounded-full text-sm hover:bg-peach hover:text-orange transition-colors border border-gray-100 flex-shrink-0" data-filter="online">Онлайн</button>
+                        <button class="filter-btn px-5 py-2 bg-gray-50 text-gray-600 font-medium rounded-full text-sm hover:bg-peach hover:text-orange transition-colors border border-gray-100 flex-shrink-0" data-filter="offline">Офлайн</button>
+                        <button class="filter-btn px-5 py-2 bg-gray-50 text-gray-600 font-medium rounded-full text-sm hover:bg-peach hover:text-orange transition-colors border border-gray-100 flex-shrink-0" data-filter="kpt">КПТ</button>
+                        <button class="filter-btn px-5 py-2 bg-gray-50 text-gray-600 font-medium rounded-full text-sm hover:bg-peach hover:text-orange transition-colors border border-gray-100 flex-shrink-0" data-filter="gestalt">Гештальт</button>
+                        <button class="filter-btn px-5 py-2 bg-gray-50 text-gray-600 font-medium rounded-full text-sm hover:bg-peach hover:text-orange transition-colors border border-gray-100 flex-shrink-0" data-filter="family">Семейные</button>
+                    </div>
+                    
+                    <!-- Expanded Specialists List -->
+                    <div class="space-y-5" id="specialists-list">
+                        <!-- Card 1 -->
+                        <a href="catalog.html?spec=1" class="spec-card bento-card interactive p-6 flex gap-6 items-center group" data-tags="online kpt">
+                            <div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-xl group-hover:text-orange transition-colors text-graphite">Елена Соколова</h4>
+                                    <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                </div>
+                                <p class="text-sm text-gray-500 font-medium mb-3">Клинический психолог, КПТ</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs font-bold bg-peach text-orange px-3 py-1.5 rounded-lg">Онлайн</span>
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">От 3000 ₽</span>
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <!-- Card 2 -->
+                        <a href="catalog.html?spec=2" class="spec-card bento-card interactive p-6 flex gap-6 items-center group" data-tags="offline gestalt">
+                            <div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                                <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="font-bold text-xl group-hover:text-orange transition-colors mb-1 text-graphite">Михаил Волков</h4>
+                                <p class="text-sm text-gray-500 font-medium mb-3">Гештальт-терапевт</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">Офлайн</span>
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">От 4500 ₽</span>
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <!-- Card 3 -->
+                        <a href="catalog.html?spec=3" class="spec-card bento-card interactive p-6 flex gap-6 items-center group" data-tags="online family">
+                            <div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-xl group-hover:text-orange transition-colors text-graphite">Анна Шмидт</h4>
+                                    <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                </div>
+                                <p class="text-sm text-gray-500 font-medium mb-3">Семейный психолог</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs font-bold bg-peach text-orange px-3 py-1.5 rounded-lg">Онлайн</span>
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">От 3500 ₽</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Card 4 -->
+                        <a href="catalog.html?spec=4" class="spec-card bento-card interactive p-6 flex gap-6 items-center group" data-format="offline">
+                            <div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200&h=200" alt="Дмитрий Романов" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-xl group-hover:text-orange transition-colors">Дмитрий Романов</h4>
+                                </div>
+                                <p class="text-sm text-gray-500 font-medium mb-3">Психоаналитик</p>
+                                <div class="flex gap-2">
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">Офлайн</span>
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">От 5000 ₽</span>
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <!-- Card 5 -->
+                        <a href="catalog.html?spec=5" class="spec-card bento-card interactive p-6 flex gap-6 items-center group" data-tags="online emdr">
+                            <div class="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-xl group-hover:text-orange transition-colors text-graphite">Ольга Ильина</h4>
+                                </div>
+                                <p class="text-sm text-gray-500 font-medium mb-3">Травматерапевт, EMDR</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="text-xs font-bold bg-peach text-orange px-3 py-1.5 rounded-lg">Онлайн</span>
+                                    <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg">От 4000 ₽</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Library Expanded -->
+                <div id="library" class="flex flex-col">
+                    <div class="mb-8">
+                        <h2 class="text-4xl font-black mb-4 tracking-tight">Библиотека</h2>
+                        <p class="text-gray-500 font-medium">Короткие, понятные статьи с визуальными опорами.</p>
+                    </div>
+                    
+                    <div class="h-[72px] mb-8 hidden lg:block"></div>
+                    
+                    <div class="space-y-5">
+                        <!-- Lib Card 1 -->
+                        <a href="library.html" class="bento-card interactive p-6 flex justify-between items-center group">
+                            <div class="flex gap-5 items-center w-full">
+                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                                    <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                                </div>
+                                <div class="flex-grow pr-4">
+                                    <h4 class="font-bold text-xl mb-3 group-hover:text-orange transition-colors text-graphite">Что такое когнитивные искажения?</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-md border border-gray-200">Статья</span>
+                                        <span class="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md border border-blue-100">Легкий уровень</span>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <svg class="w-6 h-6 text-gray-300 group-hover:text-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <!-- Lib Card 2 -->
+                        <a href="library.html" class="bento-card interactive p-6 flex justify-between items-center group">
+                            <div class="flex gap-5 items-center w-full">
+                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                                    <img src="https://images.unsplash.com/photo-1555529771-835f59fc5efe?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:scale-105 transition-all">
+                                </div>
+                                <div class="flex-grow pr-4">
+                                    <h4 class="font-bold text-xl mb-3 group-hover:text-orange transition-colors text-graphite">Как работают антидепрессанты</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="text-xs font-bold bg-peach text-orange px-3 py-1.5 rounded-md flex items-center gap-1 border border-peach">Аудиоверсия</span>
+                                        <span class="text-xs font-bold bg-purple-50 text-purple-600 px-3 py-1.5 rounded-md border border-purple-100">Средний уровень</span>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <svg class="w-6 h-6 text-gray-300 group-hover:text-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <!-- Lib Card 3 -->
+                        <a href="library.html" class="bento-card interactive p-6 flex justify-between items-center group">
+                            <div class="flex gap-5 items-center w-full">
+                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                                    <img src="https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&q=80&w=200&h=200" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                                </div>
+                                <div class="flex-grow pr-4">
+                                    <h4 class="font-bold text-xl mb-3 group-hover:text-orange transition-colors text-graphite">Техники дыхания при панике</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-md border border-green-100">▶ Видео</span>
+                                        <span class="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md border border-blue-100">Легкий уровень</span>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <svg class="w-6 h-6 text-gray-300 group-hover:text-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                            </div>
+                        </a>
+                        
+                        <!-- Lib Card 4 -->
+                        <a href="library.html" class="bento-card interactive p-6 flex justify-between items-center group">
+                            <div class="flex gap-5 items-center w-full">
+                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-graphite flex-shrink-0 flex items-center justify-center text-3xl">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                </div>
+                                <div class="flex-grow pr-4">
+                                    <h4 class="font-bold text-xl mb-3 group-hover:text-orange transition-colors text-graphite">Тест: Шкала депрессии Бека</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-md border border-gray-200">Интерактив</span>
+                                        <span class="text-xs font-bold bg-orange/10 text-orange px-3 py-1.5 rounded-md border border-orange/20">Самодиагностика</span>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <svg class="w-6 h-6 text-gray-300 group-hover:text-orange transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Поддержка близких -->
+        <section class="max-w-7xl mx-auto px-6 mb-24 w-full">
+            <a href="support.html" class="bento-card interactive bg-graphite text-white rounded-3xl p-12 md:p-20 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12 group block">
+                <div class="absolute right-0 top-0 bottom-0 w-full md:w-3/4 opacity-60 bg-[url('https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&q=80&w=1000')] bg-cover bg-center [mask-image:linear-gradient(to_bottom,black_40%,transparent)] md:[mask-image:linear-gradient(to_left,black_60%,transparent)] pointer-events-none transition-opacity duration-500 group-hover:opacity-80"></div>
+                <div class="relative z-10 max-w-xl">
+                    <span class="inline-block px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-sm font-bold mb-6 backdrop-blur-md">Спецраздел</span>
+                    <h2 class="text-4xl md:text-5xl font-black mb-6 leading-tight drop-shadow-md">Поддержка близких</h2>
+                    <p class="text-gray-200 font-medium mb-10 text-lg leading-relaxed drop-shadow-md">Правила экологичного общения, советы, как не навредить, и инструкции, как не выгореть самому, помогая другому человеку.</p>
+                    <span class="pill-btn inline-block bg-orange text-white px-8 py-4 font-bold text-lg group-hover:bg-orange-light shadow-lg group-hover:shadow-orange/30 transition-all">Изучить материалы</span>
+                </div>
+            </a>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-peach/50 pt-16 pb-8 bg-gray-50/50 mt-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12 text-sm text-gray-500 font-medium">
+            <div class="max-w-xs">
+                <div class="font-black text-xl text-graphite mb-4">Ресурсный<span class="text-orange">Центр</span></div>
+                <p class="mb-6 leading-relaxed">Безопасное пространство для работы с ментальным здоровьем. Полностью конфиденциально.</p>
+                <p>© 2026. Все права защищены.</p>
+            </div>
+            <div class="flex flex-wrap gap-16">
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">Инклюзивность</span>
+                    <a href="library.html" class="hover:text-orange transition-colors">Глоссарий терминов</a>
+                    <a href="#" class="hover:text-orange transition-colors">Настройки доступности</a>
+                    <a href="#" class="hover:text-orange transition-colors">TTS Спецификация</a>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">О проекте</span>
+                    <a href="index.html" class="hover:text-orange transition-colors">Наша миссия</a>
+                    <a href="support.html" class="hover:text-orange transition-colors">Поддержка близких</a>
+                    <a href="catalog.html" class="hover:text-orange transition-colors">Стать специалистом</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic -->
+    <script>
+        // Safe Mode
+        const safeModeBtn = document.getElementById('safeModeToggle');
+        let isSafeMode = localStorage.getItem('safeMode') === 'true';
+        
+        const toggleSafeModeUI = (enabled) => {
+            if (enabled) {
+                document.body.classList.add('safe-mode');
+                safeModeBtn.classList.replace('bg-peach', 'bg-graphite');
+                safeModeBtn.classList.replace('text-orange', 'text-white');
+                safeModeBtn.innerText = 'Обычный режим';
+            } else {
+                document.body.classList.remove('safe-mode');
+                safeModeBtn.classList.replace('bg-graphite', 'bg-peach');
+                safeModeBtn.classList.replace('text-white', 'text-orange');
+                safeModeBtn.innerText = 'Безопасный режим';
+            }
+        };
+        
+        toggleSafeModeUI(isSafeMode);
+        safeModeBtn.addEventListener('click', () => {
+            isSafeMode = !isSafeMode;
+            localStorage.setItem('safeMode', isSafeMode);
+            toggleSafeModeUI(isSafeMode);
+        });
+
+        // Expanded Filters Logic
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const specCards = document.querySelectorAll('.spec-card');
+
+        const applyFilter = (filterValue) => {
+            specCards.forEach(card => {
+                const tags = card.getAttribute('data-tags') || "";
+                if (filterValue === 'all' || tags.includes(filterValue)) {
+                    card.style.display = 'flex';
+                    card.animate([{opacity: 0, transform: 'translateY(10px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 300, fill: 'forwards'});
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+        
+        applyFilter('all'); // Show all by default
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-graphite', 'text-white', 'active');
+                    b.classList.add('bg-gray-50', 'text-gray-600');
+                });
+                
+                btn.classList.remove('bg-gray-50', 'text-gray-600');
+                btn.classList.add('bg-graphite', 'text-white', 'active');
+
+                const filterValue = btn.getAttribute('data-filter');
+                applyFilter(filterValue);
+            });
+        });
+
+        // TTS
+        const ttsBtn = document.getElementById('ttsHero');
+        let isSpeaking = false;
+        ttsBtn.addEventListener('click', () => {
+            if (!('speechSynthesis' in window)) return;
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+                ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> Озвучить';
+                return;
+            }
+            const msg = new SpeechSynthesisUtterance("Пространство для вашего спокойствия. Мы здесь, чтобы помочь вам найти баланс. Без стигмы, сложных терминов и лишнего шума.");
+            msg.lang = 'ru-RU'; msg.rate = 0.9;
+            msg.onend = () => { 
+                isSpeaking = false; 
+                ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5 10v4a2 2 0 002 2h2l4 4V4L9 8H7a2 2 0 00-2 2z"></path></svg> Озвучить'; 
+            };
+            window.speechSynthesis.speak(msg);
+            isSpeaking = true;
+            ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg> Остановить';
+        });
+
+        const initThreeJS = () => {
+            const container = document.getElementById('webgl-canvas');
+            if (!container || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof THREE === 'undefined') return;
+
+            container.innerHTML = '';
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.z = 4.5;
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            const light = new THREE.DirectionalLight(0xff8c42, 1.5);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+
+            const statusEl = document.createElement('div');
+            statusEl.className = 'absolute inset-0 flex flex-col items-center justify-center text-xs font-bold text-orange text-center p-4 bg-white/50 backdrop-blur-sm z-10';
+            statusEl.innerHTML = '<div class="w-5 h-5 border-2 border-orange border-t-transparent rounded-full animate-spin mb-2"></div>Загрузка 3D...';
+            container.appendChild(statusEl);
+
+            let mesh;
+            const loader = new THREE.GLTFLoader();
+            
+            loader.load('Untitled.glb', function(gltf) {
+                if(statusEl) statusEl.remove();
+                const model = gltf.scene;
+                
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 2.5 / maxDim; 
+                model.scale.set(scale, scale, scale);
+                
+                const center = box.getCenter(new THREE.Vector3()).multiplyScalar(scale);
+                model.position.sub(center);
+                
+                mesh = new THREE.Group();
+                mesh.add(model);
+                scene.add(mesh);
+            }, undefined, function(error) {
+                console.error("Ошибка загрузки 3D: ", error);
+                if(statusEl) {
+                    statusEl.innerHTML = '<span class="text-red-500">❌ Ошибка 3D.<br>Убедитесь, что файл <b>Untitled.glb</b> находится в той же папке.</span>';
+                    statusEl.classList.remove('text-orange', 'bg-white/50');
+                    statusEl.classList.add('bg-red-50');
+                }
+            });
+
+            const clock = new THREE.Clock();
+            let currentSpeed = 0.8;
+            const animate = () => {
+                requestAnimationFrame(animate);
+                if (!document.body.classList.contains('safe-mode') && mesh) {
+                    const t = clock.getElapsedTime();
+                    mesh.rotation.y = t * 0.2;
+                    mesh.rotation.x = Math.sin(t * 0.3) * 0.2;
+                    
+                    if (typeof targetVisuals !== 'undefined') {
+                        currentSpeed += (targetVisuals.speed - currentSpeed) * 0.05;
+                        mesh.traverse((child) => {
+                            if (child.isMesh && child.material && child.material.color) {
+                                child.material.color.lerp(targetVisuals.color, 0.05);
+                            }
+                        });
+                    }
+
+                    const scale = 1 + Math.sin(t * (typeof currentSpeed !== 'undefined' ? currentSpeed : 1.5)) * 0.03;
+                    mesh.scale.set(scale, scale, scale);
+                }
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            window.addEventListener('resize', () => {
+                if(container.clientWidth > 0){
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+        };
+        initThreeJS();
+    </script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог специалистов | Ресурсный центр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { graphite: '#1C1C1E', orange: { DEFAULT: '#FF8C42', light: '#FFA666' }, peach: '#FFF4F0', safe: '#F9FAFB' },
+                    fontFamily: { sans: ['PP Neue Montreal', 'system-ui', 'sans-serif'] },
+                    boxShadow: { 'soft': '0 4px 20px rgba(0, 0, 0, 0.03)', 'soft-hover': '0 12px 30px rgba(255, 140, 66, 0.08)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-book.woff') format('woff');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-italic.woff') format('woff');
+            font-weight: 400;
+            font-style: italic;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: url('ppneuemontreal-bold.woff') format('woff');
+            font-weight: 700;
+            font-style: normal;
+        }
+        body { font-family: 'PP Neue Montreal', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; scroll-behavior: smooth; background-color: #fafafa; }
+        
+        /* Safe Mode */
+        body.safe-mode { background-color: #F9FAFB !important; }
+        body.safe-mode img { filter: grayscale(100%) contrast(0.8) opacity(0.8); }
+        body.safe-mode * { animation: none !important; transition: none !important; }
+        
+        /* Bento styles */
+        .bento-card { background: #ffffff; border: 1px solid #f3f4f6; border-radius: 24px; box-shadow: var(--tw-shadow-soft); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+        body:not(.safe-mode) .bento-card.interactive:hover { transform: translateY(-4px); box-shadow: var(--tw-shadow-soft-hover); border-color: #FF8C42; }
+        
+        /* Form Accessibility */
+        .accessible-input { w-full; bg-gray-50; border: 2px solid #e5e7eb; border-radius: 16px; padding: 16px; font-size: 1.125rem; transition: all 0.2s; }
+        .accessible-input:focus { border-color: #FF8C42; outline: none; box-shadow: 0 0 0 4px rgba(255, 140, 66, 0.2); background-color: #ffffff; }
+        .error-state { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
+        .error-msg { display: none; color: #ef4444; font-weight: 700; font-size: 0.875rem; margin-top: 8px; }
+        
+        .pill-btn { border-radius: 9999px; transition: all 0.2s ease; cursor: pointer; }
+        .pill-btn:active { transform: scale(0.96); }
+        *:focus-visible { outline: 3px solid #FF8C42; outline-offset: 2px; }
+        
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+        .cog-text p { margin-bottom: 1rem; line-height: 1.6; max-width: 65ch; }
+        
+        /* Custom UI Filters */
+        .filter-group-title { font-weight: 800; color: #1C1C1E; margin-bottom: 16px; font-size: 1.125rem; }
+        
+        .format-radio { display: none; }
+        .format-label { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #ffffff; border: 2px solid #f3f4f6; border-radius: 16px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #4b5563; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .format-label:hover { border-color: #d1d5db; transform: translateY(-1px); }
+        .format-radio:checked + .format-label { background: #FFF4F0; border-color: #FF8C42; color: #FF8C42; box-shadow: 0 4px 12px rgba(255, 140, 66, 0.1); }
+
+        .approach-cb { display: none; }
+        .approach-label { display: inline-block; padding: 8px 16px; background: #f3f4f6; border: 2px solid transparent; border-radius: 999px; cursor: pointer; transition: all 0.2s; font-weight: 500; font-size: 0.875rem; color: #4b5563; user-select: none; }
+        .approach-label:hover { background: #e5e7eb; }
+        .approach-cb:checked + .approach-label { background: #1C1C1E; color: #ffffff; }
+
+        /* Modal */
+        #booking-modal { backdrop-filter: blur(8px); }
+        
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+        /* Mobile Adaptive Styles */
+        @media (max-width: 768px) {
+            .max-w-7xl { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+            h1.text-5xl, h1.text-7xl { font-size: 2.5rem !important; line-height: 1.1 !important; }
+            h2.text-4xl, h2.text-5xl { font-size: 2rem !important; line-height: 1.2 !important; }
+            
+            /* Responsive Canvas Container */
+            .canvas-container { height: 300px !important; min-height: 300px !important; border-radius: 1.5rem !important; margin-top: 1rem; width: 100% !important; }
+            
+            /* Bento Cards */
+            .bento-card { padding: 1.5rem !important; border-radius: 1.5rem !important; flex-direction: column !important; gap: 1.5rem !important; }
+            .bento-card.p-0 { padding: 0 !important; }
+            
+            /* Header */
+            header nav { display: none !important; } 
+            header .max-w-7xl { height: 4rem !important; }
+            header button { padding: 0.5rem 1rem !important; font-size: 0.875rem !important; }
+            
+            /* General Layout Overrides */
+            section { padding-top: 3rem !important; padding-bottom: 3rem !important; }
+            .hero-section { min-height: auto !important; padding-top: 2rem !important; padding-bottom: 2rem !important; }
+            .flex-row, .md\:flex-row, .lg\:flex-row { flex-direction: column !important; }
+            .w-full.md\:w-72 { width: 100% !important; }
+            
+            /* Inputs and Buttons */
+            .pill-btn { width: 100% !important; justify-content: center !important; text-align: center !important; }
+            .w-max { width: 100% !important; }
+            input, textarea, select { font-size: 16px !important; } /* Prevent iOS Zoom */
+            
+            /* Customizing Specific Sections */
+            /* Mood grid */
+            #mood-selector { grid-template-columns: repeat(3, 1fr) !important; gap: 0.5rem !important; }
+            #mood-selector button { padding: 0.75rem !important; }
+            
+            /* Specialists Catalog */
+            .spec-card { align-items: center !important; text-align: center !important; }
+            .spec-card > div.flex-grow { display: flex; flex-direction: column; align-items: center; width: 100%; }
+            .spec-card h4 { justify-content: center; width: 100%; }
+            .spec-card .flex-wrap { justify-content: center !important; }
+            .spec-card span.ml-auto { margin-left: 0 !important; width: 100%; text-align: center; margin-top: 0.5rem; }
+            
+            /* Library & Audio Cards */
+            .lib-card > div.flex { flex-direction: column !important; text-align: center !important; }
+            .lib-card .flex-wrap { justify-content: center !important; }
+            
+            /* Modal Fixes */
+            #modal-panel { width: 100% !important; height: 100% !important; border-radius: 0 !important; }
+            #modal-img { height: 200px !important; }
+            #booking-modal-content { padding: 1.5rem !important; border-radius: 1.5rem !important; transform: scale(1) !important; width: 95% !important; }
+            #close-modal { top: 1rem !important; right: 1rem !important; width: 2.5rem !important; height: 2.5rem !important; }
+            
+            /* Hide decorative massive objects to prevent overflow/weird scrolling */
+            .absolute.-right-8.-bottom-16, .absolute.-top-24, .bg-\[url { display: none !important; }
+            .absolute.right-0.top-0.bottom-0.w-full { display: none !important; } /* Big image overlay in support */
+        }
+
+    </style>
+</head>
+<body class="text-graphite antialiased min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-peach shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">Ресурсный<span class="text-orange">Центр</span></a>
+            <nav class="hidden md:flex gap-8 font-medium text-sm">
+                <a href="index.html" class="hover:text-orange transition-colors">Темы</a>
+                <a href="mood.html" class="hover:text-orange transition-colors">Инструменты</a>
+                <a href="catalog.html" class="text-orange font-bold transition-colors">Специалисты</a>
+                <a href="library.html" class="hover:text-orange transition-colors">Библиотека</a>
+                <a href="support.html" class="hover:text-orange transition-colors">Близким</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button id="safeModeToggle" class="pill-btn bg-peach text-orange font-semibold px-5 py-2.5 text-sm hover:bg-orange hover:text-white focus:ring-2 focus:ring-orange focus:outline-none" aria-pressed="false">Безопасный режим</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="flex-grow flex flex-col w-full py-12">
+        <div class="max-w-7xl mx-auto px-6 w-full">
+            
+            <!-- Page Title -->
+            <div class="mb-12 bg-white p-10 rounded-3xl border border-peach shadow-sm relative overflow-hidden">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-peach rounded-full blur-3xl opacity-60"></div>
+                <div class="relative z-10">
+                    <a href="index.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-orange font-medium mb-6 transition-colors group">
+                        <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> На главную
+                    </a>
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <h1 class="text-4xl md:text-5xl font-black tracking-tight mb-4">Найти своего психолога</h1>
+                            <p class="text-lg text-gray-500 font-medium max-w-2xl cog-text">Выберите специалиста, который подходит именно вам. Все психологи прошли строгий отбор, супервизию и имеют подтвержденное образование.</p>
+                        </div>
+                        <button id="ttsHero" class="pill-btn bg-white border border-gray-200 shadow-sm text-graphite px-6 py-4 hover:bg-gray-50 font-medium flex items-center gap-2 w-max transition-all">
+                            <svg class="w-5 h-5 text-orange" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"></path></svg>
+                            Озвучить
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-10 items-start">
+                
+                <!-- Filters Sidebar -->
+                <aside class="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-6 sticky top-28">
+                    
+                    <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-2xl font-black">Фильтры</h3>
+                            <button id="reset-filters" class="text-sm font-bold text-gray-400 hover:text-orange transition-colors">Сбросить</button>
+                        </div>
+                        
+                        <div class="mb-10">
+                            <h4 class="filter-group-title flex items-center gap-2">📍 Формат встреч</h4>
+                            <div class="flex flex-col gap-3">
+                                <label><input type="radio" name="format" value="all" class="format-radio" checked><span class="format-label">Любой формат</span></label>
+                                <label><input type="radio" name="format" value="online" class="format-radio"><span class="format-label">Только онлайн</span></label>
+                                <label><input type="radio" name="format" value="offline" class="format-radio"><span class="format-label">Очно в кабинете</span></label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="filter-group-title flex items-center gap-2">🧠 Направления</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <label><input type="checkbox" value="kpt" class="approach-cb"><span class="approach-label">КПТ</span></label>
+                                <label><input type="checkbox" value="gestalt" class="approach-cb"><span class="approach-label">Гештальт</span></label>
+                                <label><input type="checkbox" value="emdr" class="approach-cb"><span class="approach-label">EMDR / ДПДГ</span></label>
+                                <label><input type="checkbox" value="family" class="approach-cb"><span class="approach-label">Семейная терапия</span></label>
+                                <label><input type="checkbox" value="psychoanalysis" class="approach-cb"><span class="approach-label">Психоанализ</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-peach/60 p-6 rounded-3xl border border-peach/50 relative overflow-hidden group">
+                        <div class="absolute -right-4 -bottom-4 text-6xl opacity-20 group-hover:scale-110 transition-transform"><svg class="w-full h-full text-peach" fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"></path></svg></div>
+                        <h4 class="font-bold text-lg mb-2 text-graphite relative z-10">Сложно выбрать?</h4>
+                        <p class="text-sm text-gray-600 mb-4 font-medium relative z-10 leading-relaxed">В нашей библиотеке есть понятный гид по всем направлениям терапии.</p>
+                        <a href="library.html" class="inline-flex items-center gap-1 text-orange font-bold text-sm hover:gap-2 transition-all relative z-10">Читать гид <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></a>
+                    </div>
+                </aside>
+
+                <!-- Specialists Grid -->
+                <div class="flex-grow flex flex-col gap-6 w-full">
+                    
+                    <div class="flex justify-between items-center px-2">
+                        <p class="text-gray-500 font-bold text-sm"><span id="spec-count" class="text-graphite">0</span> специалистов найдено</p>
+                        <select class="bg-transparent border-none text-sm font-bold text-graphite cursor-pointer outline-none focus:ring-0">
+                            <option>Сначала рекомендуемые</option>
+                            <option>Сначала дешевле</option>
+                            <option>Слишком дорогие</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6" id="catalog-grid">
+                        <!-- Specialist Cards will be rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Accessible Booking Modal -->
+    <div id="booking-modal" class="fixed inset-0 bg-graphite/60 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bento-card w-full max-w-2xl bg-white p-8 md:p-10 relative transform scale-95 transition-transform duration-300 shadow-2xl" id="booking-modal-content">
+            <button id="close-modal" class="absolute top-6 right-6 w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 hover:text-graphite transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div class="mb-8 pr-12">
+                
+                <h2 class="text-3xl md:text-4xl font-black mb-3 text-graphite tracking-tight">Запись к специалисту</h2>
+                <p class="text-gray-500 font-medium">Оставьте контакты, и психолог свяжется с вами для уточнения времени. Данные передаются безопасно.</p>
+            </div>
+            
+            <div id="modal-spec-info" class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl mb-8 border border-gray-100 shadow-sm"></div>
+
+            <form id="booking-form" class="flex flex-col gap-6" novalidate>
+                <div>
+                    <label for="f-name" class="block font-bold text-graphite mb-2 text-lg">Как к вам обращаться?</label>
+                    <input type="text" id="f-name" class="accessible-input w-full" placeholder="Имя или псевдоним" required>
+                    <p class="error-msg" id="err-name">Это поле обязательно для заполнения.</p>
+                </div>
+                
+                <div>
+                    <label for="f-contact" class="block font-bold text-graphite mb-2 text-lg">Удобный способ связи</label>
+                    <p class="text-sm text-gray-500 mb-2">Telegram, WhatsApp или номер телефона</p>
+                    <input type="text" id="f-contact" class="accessible-input w-full" placeholder="@username или +7..." required>
+                    <p class="error-msg" id="err-contact">Пожалуйста, укажите способ связи.</p>
+                </div>
+
+                <div>
+                    <label for="f-notes" class="block font-bold text-graphite mb-2 text-lg">Что вас беспокоит? (Необязательно)</label>
+                    <p class="text-sm text-gray-500 mb-2">Коротко опишите проблему, чтобы психолог понимал ваш запрос.</p>
+                    <textarea id="f-notes" rows="3" class="accessible-input w-full resize-none" placeholder="Напишите здесь..."></textarea>
+                </div>
+
+                <div class="mt-4 border-t border-gray-100 pt-8 flex flex-col gap-4">
+                    <button type="submit" class="pill-btn bg-orange text-white px-10 py-4 font-black text-lg shadow-lg hover:shadow-orange/30 hover:bg-orange-light w-full transition-all">Отправить заявку</button>
+                    <p class="text-xs text-gray-400 text-center font-medium">Нажимая кнопку, вы соглашаетесь с условиями конфиденциальности.</p>
+                </div>
+            </form>
+            
+            <div id="booking-success" class="hidden absolute inset-0 bg-white z-10 flex flex-col items-center justify-center text-center p-8 rounded-[24px]">
+                <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-5xl mb-6 shadow-inner animate-bounce"><div class="w-12 h-12"><svg class="w-full h-full text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg></div></div>
+                <h3 class="text-4xl font-black text-graphite mb-4 tracking-tight">Заявка отправлена</h3>
+                <p class="text-gray-500 font-medium text-lg max-w-sm mb-10">Специалист свяжется с вами в течение рабочего дня.</p>
+                <button id="success-close-btn" class="pill-btn bg-graphite text-white px-10 py-4 font-bold text-lg hover:bg-gray-800 transition-colors">Отлично, спасибо</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-peach/50 pt-16 pb-8 bg-gray-50/50 mt-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between gap-12 text-sm text-gray-500 font-medium">
+            <div class="max-w-xs">
+                <div class="font-black text-xl text-graphite mb-4">Ресурсный<span class="text-orange">Центр</span></div>
+                <p class="mb-6 leading-relaxed">Безопасное пространство для работы с ментальным здоровьем. Полностью конфиденциально.</p>
+                <p>© 2026. Все права защищены.</p>
+            </div>
+            <div class="flex flex-wrap gap-16">
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">Инклюзивность</span>
+                    <a href="library.html" class="hover:text-orange transition-colors">Глоссарий терминов</a>
+                    <a href="#" class="hover:text-orange transition-colors">Настройки доступности</a>
+                    <a href="#" class="hover:text-orange transition-colors">TTS Спецификация</a>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <span class="font-bold text-graphite uppercase tracking-wider text-xs">О проекте</span>
+                    <a href="index.html" class="hover:text-orange transition-colors">Наша миссия</a>
+                    <a href="support.html" class="hover:text-orange transition-colors">Поддержка близких</a>
+                    <a href="catalog.html" class="hover:text-orange transition-colors">Стать специалистом</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Logic -->
+    <script>
+        const specialists = [
+            { id: 1, name: "Елена Соколова", title: "Клинический психолог, КПТ", format: "online", tags: ["kpt"], price: "3000 ₽", rating: "4.9", reviews: 142, slot: "Завтра, 14:00", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400&h=400" },
+            { id: 2, name: "Михаил Волков", title: "Гештальт-терапевт", format: "offline", tags: ["gestalt"], price: "4500 ₽", rating: "5.0", reviews: 89, slot: "Сегодня, 18:00", img: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400&h=400" },
+            { id: 3, name: "Анна Шмидт", title: "Семейный психолог", format: "online", tags: ["family"], price: "3500 ₽", rating: "4.8", reviews: 210, slot: "Ср, 16 окт", img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400&h=400" },
+            { id: 4, name: "Дмитрий Романов", title: "Психоаналитик", format: "offline", tags: ["psychoanalysis"], price: "5000 ₽", rating: "4.9", reviews: 56, slot: "Пт, 18 окт", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400&h=400" }, 
+            { id: 5, name: "Ольга Ильина", title: "Травматерапевт, EMDR", format: "online", tags: ["emdr", "kpt"], price: "4000 ₽", rating: "5.0", reviews: 312, slot: "Завтра, 11:00", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400&h=400" },
+            { id: 6, name: "Константин Смирнов", title: "Семейная терапия, КПТ", format: "offline", tags: ["kpt", "family"], price: "4000 ₽", rating: "4.7", reviews: 120, slot: "Завтра, 19:00", img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400" },
+            { id: 7, name: "Мария Ковалёва", title: "Гештальт-терапевт", format: "online", tags: ["gestalt"], price: "2500 ₽", rating: "4.8", reviews: 45, slot: "Сегодня, 20:00", img: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400&h=400" },
+            { id: 8, name: "Алексей Попов", title: "EMDR терапевт", format: "online", tags: ["emdr"], price: "3500 ₽", rating: "4.9", reviews: 178, slot: "Сб, 21 окт", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400" },
+        ];
+
+        // Safe Mode
+        const safeModeBtn = document.getElementById('safeModeToggle');
+        let isSafeMode = localStorage.getItem('safeMode') === 'true';
+        
+        const toggleSafeModeUI = (enabled) => {
+            if (enabled) {
+                document.body.classList.add('safe-mode');
+                safeModeBtn.classList.replace('bg-peach', 'bg-graphite');
+                safeModeBtn.classList.replace('text-orange', 'text-white');
+                safeModeBtn.innerText = 'Обычный режим';
+            } else {
+                document.body.classList.remove('safe-mode');
+                safeModeBtn.classList.replace('bg-graphite', 'bg-peach');
+                safeModeBtn.classList.replace('text-white', 'text-orange');
+                safeModeBtn.innerText = 'Безопасный режим';
+            }
+        };
+        
+        toggleSafeModeUI(isSafeMode);
+        safeModeBtn.addEventListener('click', () => {
+            isSafeMode = !isSafeMode;
+            localStorage.setItem('safeMode', isSafeMode);
+            toggleSafeModeUI(isSafeMode);
+        });
+
+        // Rendering & Filtering
+        const grid = document.getElementById('catalog-grid');
+        const formatRadios = document.querySelectorAll('input[name="format"]');
+        const approachCbs = document.querySelectorAll('.approach-cb');
+        const resetBtn = document.getElementById('reset-filters');
+        const countDisplay = document.getElementById('spec-count');
+
+        const renderCards = () => {
+            const formatFilter = document.querySelector('input[name="format"]:checked').value;
+            const approachFilters = Array.from(approachCbs).filter(cb => cb.checked).map(cb => cb.value);
+
+            const filtered = specialists.filter(spec => {
+                const matchFormat = formatFilter === 'all' || spec.format === formatFilter;
+                const matchApproach = approachFilters.length === 0 || approachFilters.some(a => spec.tags.includes(a));
+                return matchFormat && matchApproach;
+            });
+            
+            countDisplay.innerText = filtered.length;
+
+            grid.innerHTML = '';
+            if(filtered.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-16 text-center bg-white rounded-3xl border border-gray-100"><p class="text-2xl font-black text-graphite mb-2">Никого не нашли</p><p class="text-gray-500 font-medium">Попробуйте изменить параметры фильтра, чтобы увидеть больше психологов.</p></div>';
+                return;
+            }
+
+            filtered.forEach(spec => {
+                const isOnline = spec.format === 'online';
+                const formatLabel = isOnline ? 'Онлайн' : 'Кабинет';
+                const dotColor = isOnline ? 'bg-green-500' : 'bg-gray-400';
+                
+                const html = `
+                    <div class="bento-card interactive p-6 flex flex-col justify-between group relative overflow-hidden bg-white">
+                        <div class="absolute -top-12 -right-12 w-32 h-32 bg-orange/5 rounded-full blur-2xl group-hover:bg-orange/10 transition-colors pointer-events-none"></div>
+                        <div class="relative z-10">
+                            <div class="flex gap-5 items-start mb-5">
+                                <div class="relative w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                                    <img src="${spec.img}" alt="${spec.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                                    
+                                </div>
+                                <div class="flex-grow pt-1">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <h4 class="font-bold text-xl group-hover:text-orange transition-colors text-graphite leading-tight">
+                                            ${spec.name}
+                                        </h4>
+                                        <div class="flex items-center gap-1 text-sm font-bold text-graphite bg-gray-50 px-2 py-1 rounded-lg">
+                                            <span class="text-orange">★</span> ${spec.rating}
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 font-medium leading-tight mb-3">${spec.title}</p>
+                                    <span class="inline-flex text-[11px] font-bold uppercase tracking-wider text-green-700 bg-green-50 px-2 py-1 rounded-md border border-green-100">
+                                        Запись: ${spec.slot}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-6 border-t border-gray-50 pt-5 mt-2">
+                                <span class="text-xs font-bold ${isOnline ? 'bg-peach text-orange' : 'bg-gray-100 text-gray-600'} px-3 py-1.5 rounded-lg border border-transparent flex items-center gap-1.5">${formatLabel}</span>
+                                <span class="text-xs font-bold bg-white text-graphite px-3 py-1.5 rounded-lg border border-gray-200">${spec.price} / 50 мин</span>
+                                <span class="text-xs font-semibold text-gray-400 py-1.5 ml-auto">${spec.reviews} отзывов</span>
+                            </div>
+                        </div>
+                        <button class="book-btn relative z-10 w-full pill-btn bg-white border-2 border-gray-100 text-graphite py-3.5 font-bold hover:bg-orange hover:border-orange hover:text-white transition-all text-center flex items-center justify-center gap-2 shadow-sm" data-id="${spec.id}">
+                            Записаться на сессию
+                        </button>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', html);
+            });
+            
+            bindModalEvents();
+        };
+
+        formatRadios.forEach(r => r.addEventListener('change', renderCards));
+        approachCbs.forEach(cb => cb.addEventListener('change', renderCards));
+        resetBtn.addEventListener('click', () => {
+            formatRadios[0].checked = true; // Set to 'all'
+            approachCbs.forEach(cb => cb.checked = false);
+            renderCards();
+        });
+
+        renderCards();
+
+        // Modal & Accessible Form Logic
+        const modal = document.getElementById('booking-modal');
+        const modalContent = document.getElementById('booking-modal-content');
+        const closeModalBtn = document.getElementById('close-modal');
+        const bookingForm = document.getElementById('booking-form');
+        const modalSpecInfo = document.getElementById('modal-spec-info');
+        const successOverlay = document.getElementById('booking-success');
+        const successCloseBtn = document.getElementById('success-close-btn');
+        const fName = document.getElementById('f-name');
+        const fContact = document.getElementById('f-contact');
+        const fNotes = document.getElementById('f-notes');
+        const errName = document.getElementById('err-name');
+        const errContact = document.getElementById('err-contact');
+
+        const loadDraft = () => {
+            const draft = JSON.parse(localStorage.getItem('bookingDraft') || '{}');
+            if(draft.name) fName.value = draft.name;
+            if(draft.contact) fContact.value = draft.contact;
+            if(draft.notes) fNotes.value = draft.notes;
+        };
+
+        const saveDraft = () => {
+            const draft = { name: fName.value, contact: fContact.value, notes: fNotes.value };
+            localStorage.setItem('bookingDraft', JSON.stringify(draft));
+        };
+
+        [fName, fContact, fNotes].forEach(input => {
+            input.addEventListener('input', () => {
+                saveDraft();
+                if(input.value.trim() !== '') {
+                    input.classList.remove('error-state');
+                    if(input.id === 'f-name') errName.style.display = 'none';
+                    if(input.id === 'f-contact') errContact.style.display = 'none';
+                }
+            });
+        });
+
+        const openModal = (specId) => {
+            const spec = specialists.find(s => s.id == specId);
+            if(!spec) return;
+            
+            modalSpecInfo.innerHTML = `
+                <div class="relative w-14 h-14 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                    <img src="${spec.img}" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h4 class="font-bold text-graphite text-lg leading-tight">${spec.name}</h4>
+                    <p class="text-sm font-medium text-gray-500">${spec.title}</p>
+                </div>
+                <div class="ml-auto text-right">
+                    <p class="text-xs font-bold text-gray-400 mb-1">Стоимость</p>
+                    <p class="font-black text-orange">${spec.price}</p>
+                </div>
+            `;
+            
+            loadDraft();
+            successOverlay.classList.add('hidden');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+            
+            document.body.style.overflow = 'hidden'; 
+        };
+
+        const closeModal = () => {
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        };
+
+        function bindModalEvents() {
+            document.querySelectorAll('.book-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    openModal(e.target.getAttribute('data-id'));
+                });
+            });
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        successCloseBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) closeModal();
+        });
+
+        bookingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let isValid = true;
+
+            if(fName.value.trim() === '') {
+                fName.classList.add('error-state');
+                errName.style.display = 'block';
+                isValid = false;
+            }
+            if(fContact.value.trim() === '') {
+                fContact.classList.add('error-state');
+                errContact.style.display = 'block';
+                isValid = false;
+            }
+
+            if(isValid) {
+                successOverlay.classList.remove('hidden');
+                localStorage.removeItem('bookingDraft');
+                fName.value = ''; fContact.value = ''; fNotes.value = '';
+            }
+        });
+
+        // TTS
+        const ttsBtn = document.getElementById('ttsHero');
+        let isSpeaking = false;
+        ttsBtn.addEventListener('click', () => {
+            if (!('speechSynthesis' in window)) return;
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+                isSpeaking = false;
+                ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"></path></svg> Озвучить';
+                return;
+            }
+            const msg = new SpeechSynthesisUtterance("Выберите психолога, который подходит именно вам. Вы можете отфильтровать специалистов по формату работы, направлению и стоимости.");
+            msg.lang = 'ru-RU'; msg.rate = 0.9;
+            msg.onend = () => { 
+                isSpeaking = false; 
+                ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"></path></svg> Озвучить'; 
+            };
+            window.speechSynthesis.speak(msg);
+            isSpeaking = true;
+            ttsBtn.innerHTML = '<svg class="w-5 h-5 text-orange" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 002 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg> Остановить';
+        });
+
+        // Auto-open modal if spec param is present
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const specId = urlParams.get('spec');
+            if (specId) {
+                setTimeout(() => openModal(specId), 300);
+            }
+        });
+    </script>
+</body>
+</html>
